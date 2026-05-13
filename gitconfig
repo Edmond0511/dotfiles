@@ -1,0 +1,28 @@
+[alias]
+  glog = log --all --pretty='format:%d %Cgreen%h%Creset %ci %an - %s' --graph
+  gloga = log --all --pretty='format:%d %Cgreen%h%Creset %ai %an - %s' --graph
+  changelog = log --oneline --pretty='format:- %s'
+  st = status
+  ci = commit
+  cia = commit -a --amend --no-edit
+  br = branch
+  co = checkout
+  com = !git show-ref --verify --quiet refs/heads/master && git switch master || git switch main
+  df = diff
+  lg = log -p
+  d = difftool --tool=difftastic
+[diff]
+  tool = comparemerge2
+
+[difftool]
+  prompt = false
+[difftool "comparemerge2"]
+  # 2-way compare using the app; --args passes file paths through
+  cmd = open -W -a "CompareMerge2" "$LOCAL" "$REMOTE"
+
+[user]
+	name = Edmond Y.
+	email = edmondyang11@gmail.com
+[credential]
+	helper = store
+
