@@ -1,0 +1,11 @@
+theme = "Adwaita Dark"
+
+
+# typography
+font-size=16
+font-thicken=true
+font-thicken-strength=1
+font-family = 0xProto Nerd Font Mono
+
+
+copy-on-select = false
