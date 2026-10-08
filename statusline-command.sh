@@ -8,6 +8,17 @@ model=$(echo "$input" | jq -r '.model.display_name // "Unknown Model"')
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // ""')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
 vim_mode=$(echo "$input" | jq -r '.vim.mode // empty')
+session_id=$(echo "$input" | jq -r '.session_id // empty')
+
+# Session name isn't in the input JSON; Claude Code keeps it in the per-pid
+# registry that /list-agents reads, so match it by session id.
+session_name=""
+if [ -n "$session_id" ]; then
+  session_file=$(grep -l "$session_id" "$HOME"/.claude/sessions/*.json 2>/dev/null | head -1)
+  if [ -n "$session_file" ]; then
+    session_name=$(jq -r '.name // empty' "$session_file" 2>/dev/null)
+  fi
+fi
 
 # Effort level: prefer input JSON, fall back to ~/.claude/settings.json
 effort=$(echo "$input" | jq -r '.effortLevel // .effort_level // empty')
@@ -17,7 +28,8 @@ fi
 
 # Shorten the path: replace $HOME with ~
 home="$HOME"
-short_cwd="${cwd/#$home/\~}"
+tilde="~"
+short_cwd="${cwd/#$home/$tilde}"
 
 # Git branch (fast, skip optional locks)
 git_branch=""
@@ -44,8 +56,28 @@ DIM="\033[2m"
 # Build output
 output=""
 
+# Session name (first, so each pane is identifiable against /list-agents)
+if [ -n "$session_name" ]; then
+  output="${output}$(printf "${BOLD}${GREEN}%s${RESET}" "$session_name")"
+  output="${output}$(printf "${DIM}${WHITE}%s${RESET}" "  |  ")"
+fi
+
 # Model (most prominent — magenta + bold)
 output="${output}$(printf "${BOLD}${MAGENTA}%s${RESET}" " $model")"
+
+# Effort level, attached to the model (color-coded: low=dim, medium=cyan, high=yellow, xhigh=red)
+if [ -n "$effort" ]; then
+  case "$effort" in
+    low)    eff_color="$DIM$WHITE" ; eff_label="low" ;;
+    medium) eff_color="$CYAN"      ; eff_label="med" ;;
+    high)   eff_color="$YELLOW"    ; eff_label="high" ;;
+    xhigh)  eff_color="$RED"       ; eff_label="xhigh" ;;
+    *)      eff_color="$WHITE"     ; eff_label="$effort" ;;
+  esac
+  output="${output}$(printf "${DIM}${WHITE}%s${RESET}" " (")"
+  output="${output}$(printf "${eff_color}%s${RESET}" "$eff_label")"
+  output="${output}$(printf "${DIM}${WHITE}%s${RESET}" ")")"
+fi
 
 # Separator
 output="${output}$(printf "${DIM}${WHITE}%s${RESET}" "  |  ")"
@@ -71,19 +103,6 @@ if [ -n "$used_pct" ]; then
   fi
   output="${output}$(printf "${DIM}${WHITE}%s${RESET}" "  |  ")"
   output="${output}$(printf "${ctx_color}ctx %s%%%s${RESET}" "$used_pct" "")"
-fi
-
-# Effort level (color-coded: low=dim, medium=cyan, high=yellow, xhigh=red)
-if [ -n "$effort" ]; then
-  case "$effort" in
-    low)    eff_color="$DIM$WHITE" ; eff_label="low" ;;
-    medium) eff_color="$CYAN"      ; eff_label="med" ;;
-    high)   eff_color="$YELLOW"    ; eff_label="high" ;;
-    xhigh)  eff_color="$RED"       ; eff_label="xhigh" ;;
-    *)      eff_color="$WHITE"     ; eff_label="$effort" ;;
-  esac
-  output="${output}$(printf "${DIM}${WHITE}%s${RESET}" "  |  ")"
-  output="${output}$(printf "${eff_color}%s${RESET}" "⚡$eff_label")"
 fi
 
 # Vim mode (blue, only when active)
