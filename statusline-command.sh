@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Claude Code Status Line for NoteCal dev environment
 
 input=$(cat)
 
