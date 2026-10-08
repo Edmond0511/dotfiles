@@ -20,12 +20,6 @@ if [ -n "$session_id" ]; then
   fi
 fi
 
-# Effort level: prefer input JSON, fall back to ~/.claude/settings.json
-effort=$(echo "$input" | jq -r '.effortLevel // .effort_level // empty')
-if [ -z "$effort" ] && [ -f "$HOME/.claude/settings.json" ]; then
-  effort=$(jq -r '.effortLevel // empty' "$HOME/.claude/settings.json" 2>/dev/null)
-fi
-
 # Shorten the path: replace $HOME with ~
 home="$HOME"
 tilde="~"
@@ -64,20 +58,6 @@ fi
 
 # Model (most prominent — magenta + bold)
 output="${output}$(printf "${BOLD}${MAGENTA}%s${RESET}" " $model")"
-
-# Effort level, attached to the model (color-coded: low=dim, medium=cyan, high=yellow, xhigh=red)
-if [ -n "$effort" ]; then
-  case "$effort" in
-    low)    eff_color="$DIM$WHITE" ; eff_label="low" ;;
-    medium) eff_color="$CYAN"      ; eff_label="med" ;;
-    high)   eff_color="$YELLOW"    ; eff_label="high" ;;
-    xhigh)  eff_color="$RED"       ; eff_label="xhigh" ;;
-    *)      eff_color="$WHITE"     ; eff_label="$effort" ;;
-  esac
-  output="${output}$(printf "${DIM}${WHITE}%s${RESET}" " (")"
-  output="${output}$(printf "${eff_color}%s${RESET}" "$eff_label")"
-  output="${output}$(printf "${DIM}${WHITE}%s${RESET}" ")")"
-fi
 
 # Separator
 output="${output}$(printf "${DIM}${WHITE}%s${RESET}" "  |  ")"
