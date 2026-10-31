@@ -9,3 +9,6 @@ font-family = 0xProto Nerd Font Mono
 
 
 copy-on-select = false
+
+# shift+enter inserts a newline in claude code
+keybind = shift+enter=text:\x1b\r
